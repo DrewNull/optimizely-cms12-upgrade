@@ -88,7 +88,7 @@ If you have `node_modules` in the project folder you are upgrading, then delete 
 
 ### Use Opti’s Upgrade-Assistant-Extensions
 
-Optimizely provides Upgrade-Assistant extensions with some Opti-specific capabilities:
+Optimizely provides Upgrade-Assistant extensions with some Opti-specific capabilities:
 
 - String Replacement
 - Remove Default Argument for the TemplateDescriptor Attribute
