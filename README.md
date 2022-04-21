@@ -1,1 +1,3 @@
-# optimizely-cms12-upgrade-pitfalls
+# Upgrading Optimizely to CMS 12 - Pitfalls to Avoid
+
+Content coming soon...
