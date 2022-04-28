@@ -4,62 +4,34 @@
 
 ## Background
 
-There are many great resources for learning CMS12 and Commerce14:
-
-- The official developer documentation has been updated:
-  https://world.optimizely.com
-- The official user guild has been updated:
-  https://webhelp.optimizely.com
-- Mark Price and Scott Reed host a masterclass on .NET5:
-  https://www.optimizely.com/support/education/product/migrating-to-optimizely-cms-12-and-commerce-14
-
-...and so on.
-But there aren’t many resources for upgrading from CMS 11 / Commerce 13
+There are many great resources for learning how to build a new solution using CMS 12 and Commerce 14. The official [developer documentation](https://world.optimizely.com) has been updated, the official [user guide](https://webhelp.optimizely.com) has been updated, and an excellent [masterclass](https://www.optimizely.com/support/education/product/migrating-to-optimizely-cms-12-and-commerce-14) is hosted by Mark Price and Scott Reed (to name a few). But there aren’t many resources sharing information on how to take an existing CMS 11 / Commerce 13 solution and upgrade it to .NET 5+.
 
 ## Prerequisites
 
-Phase 0: Stuff to do before you begin
+### 1. Read the official documentation
 
-### Read the official documentation
+1.  [Upgrading to Content Cloud (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/upgrading-to-content-cloud-cms-12)
+2.  [Breaking changes in Content Cloud (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12)
+3.  [System requirements for Optimizely (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/system-requirements-for-optimizely)
 
-1.  Upgrading to Content Cloud (CMS 12)
-    https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/upgrading-to-content-cloud-cms-12
+### 2. Be on .NET Framework 4.7.2 or higher
 
-2.  Breaking changes in Content Cloud (CMS 12)
-    https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12
+CMS 11 only [requires](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/system-requirements-for-optimizely) .NET Framework 4.6.1, but Microsoft [recommends](https://docs.microsoft.com/en-us/dotnet/core/porting/premigration-needed-changes) being on 4.7.2 or higher when using Upgrade-Assistant
 
-3.  System requirements for Optimizely
-    https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/system-requirements-for-optimizely
+### 3. Update to the latest version of CMS11 (Commerce13) before upgrading
 
-### Be on .NET Framework 4.7.2 or higher
+The official documentation doesn't explicitly say to do this, but is there any reason _not_ to?
 
-CMS11 only requires .NET Framework 4.6.1, but Microsoft recommends being on 4.7.2 or higher when using Upgrade-Assistant
+### 4. Check the status of add-on packages
 
-- https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/system-requirements-for-optimizely
-- https://docs.microsoft.com/en-us/dotnet/core/porting/premigration-needed-changes
+Optimizely maintains a list of the .NET 5 migration status of the official platform and addon NuGet packages:
 
-### Update to the latest version of CMS11 (Commerce13) before upgrading
+- [Add-ons platform compatibility (Optimizely Developer Docs)](https://docs.developers.optimizely.com/integrations/v1.1.0-apps-and-integrations/docs/add-ons-platform-compatibility)
+- [Add-Ons Status (Optimizely.com)](https://world.optimizely.com/resources/net5/add-ons)
 
-The official documentation doesn’t explicitly say to do this, but I can’t think of any reason not to.
+No such list exists for unofficial add-ons (as of this writing). So, when planning the upgrade, give yourself time to check the status of your favorite third party add-ons. Having no workaround for unsupported add-ons could derail your whole upgrade project. Know what you’re getting into.
 
-### Check the status of add-on packages
-
-- Official CMS/Commerce add-on platform compatibility:
-  https://docs.developers.optimizely.com/integrations/v1.1.0-apps-and-integrations/docs/add-ons-platform-compatibility
-
-- Official big list of package migration status:
-  https://world.optimizely.com/resources/net5/add-ons
-
-### Check the status of add-on packages
-
-Give yourself time to check the status of your favorite third party add-ons.
-
-Having no workaround for unsupported add-ons could derail your whole upgrade project. Know what you’re getting into.
-
-Note: Some old, .NET Framework add-ons will still work, just with a warning.
-
-Example: Authorize.Net.
-There is no .NET Core+ package, but it still compiles and runs.
+Note that some old, .NET Framework add-ons will still work, just with a warning. For example: Authorize.Net. There is no .NET Core+ package, but it still compiles and runs.
 
 ## Upgrade-Assistant
 
