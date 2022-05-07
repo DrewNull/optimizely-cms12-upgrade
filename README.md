@@ -1,7 +1,5 @@
 # Upgrading Optimizely CMS 11 to 12 and Commerce 13 to 14
 
-[[_TOC_]]
-
 ## Background
 
 There are many great resources for learning how to build a new solution using
@@ -12,13 +10,21 @@ is hosted by Mark Price and Scott Reed (to name a few). But there isn't much
 information on how to take an existing CMS 11 / Commerce 13 solution and upgrade
 it to .NET 5+.
 
-This blog post is not intended to be the definitive guide for ugprading an
-existing solution to .NET 5+, but rather a collection of learnings from
-misadventures in upgrading two Commerce 13 solutions to date.
+As described in the [official documentation](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/upgrading-to-content-cloud-cms-12),
+there phases to upgrading from CMS 11 to 12:
+
+1. Run Upgrade-Assistant
+2. Fix code issues
+3. Upgrade service environment
+
+This blog post is will walk through the first two in detail and provide a
+starting point for the third. This is not intended to be the definitive guide
+to ugprading an existing solution to .NET 5+, but rather a collection of
+learnings from misadventures in upgrading two Commerce 13 solutions to date.
 
 ## Prerequisites
 
-Make sure that your solution is ready to upgrade.
+Before we get started, make sure that your solution is ready to upgrade.
 
 ### 1. Read the official documentation
 
