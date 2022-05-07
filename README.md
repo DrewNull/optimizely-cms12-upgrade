@@ -495,19 +495,31 @@ string myFilePath = HostingEnvironment.MapPath("~/App_Data/MyFile.zip");
 string myFilePath = Path.Combine(_webHostEnvironment.WebRootPath, "App_Data/MyFile.zip");
 ```
 
-### Replace Output Caching
+### 25. Replace Output Caching
 
-`[OutputCache]` and `[ContentOutputCache]` are gone.
-<br/>https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/caching#output-caching
+Microsoft's `[OutputCache]` and Optimizely's `[ContentOutputCache]` have been
+removed. Opti no longer has its own wrapper around output caching, and instead
+recommends to use the new .NET Core types: [Output Caching](https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/caching#output-caching).
 
-It is recommended to replace these with the server-side Response Caching Middleware new in ASP.NET Core (`[ResponseCache]` should feel familiar):
-<br/>https://docs.microsoft.com/en-us/aspnet/core/performance/caching/middleware
+It is best practice to replace .NET Framework output caching with the
+server-side Response Caching Middleware new in ASP.NET Core:
+[Response Caching Middleware in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/middleware).
+The `[ResponseCache]` attribute should feel familiar.
 
-- Note that this is different than plain vanilla “Response Caching”
-- You must handle caching for authenticated users yourself
-- Be careful about the sequence in which you call app.UseResponseCaching()
-- Consider using the `<cache>` or `<distributed-cache>` tag helpers:
-  <br/> https://docs.microsoft.com/en-us/aspnet/core/mvc/views/tag-helpers/built-in/distributed-cache-tag-helper
+- Note that this is different than .NET Core's plain-vanilla "Response Caching" concept
+- RCM does not account for whether the user is authenticated, unlike .NET
+  Framework output caching. This is a significant departure from how output
+  caching worked before. Do consider this when rendering content that could vary
+  by user.
+- Be careful about the sequence in which you call `app.UseResponseCaching()`. It
+  cannot be invoked before `app.UseCors()`.
+- ASP.NET Core introudces a new caching tool called [Cache Tag Helpers](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/tag-helpers/built-in/distributed-cache-tag-helper).
+  This is represented as two new Razor elements, `<cache>` and `<distributed-cache>`,
+  which facilitates the caching of server-rendered markup from within Razor, and
+  can be used to achieve donut caching. Although Optimizely does not have
+  official helpers to manage `vary-by`, it's easy to imagine an extension for
+  `<distributed-cache>` that uses Opti's `ISynchronizedObjectInstanceCache`
+  under the hood.
 
 ### Replace `RouteTable` with `UseEndpoints`
 
