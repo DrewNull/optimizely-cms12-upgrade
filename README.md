@@ -1,4 +1,4 @@
-# Upgrading Optimizely to CMS 12 and Commerce 14
+# Upgrading Optimizely CMS 11 to 12 and Commerce 13 to 14
 
 [[_TOC_]]
 
@@ -14,8 +14,7 @@ it to .NET 5+.
 
 This blog post is not intended to be the definitive guide for ugprading an
 existing solution to .NET 5+, but rather a collection of learnings from
-misadventures in upgrading two Commerce 13 solutions to date. One the eve of
-.NET 5 falling out of LTS...
+misadventures in upgrading two Commerce 13 solutions to date.
 
 ## Prerequisites
 
@@ -62,6 +61,9 @@ to start making changes. The [.NET Upgrade-Assistant](https://dotnet.microsoft.c
 is Microsoft's CLI tool for upgrading .NET Framework solutions to .NET 5+.
 
 Read and bookmark the official Optimizely documentation: [Upgrade Assistant](https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/upgrade-assistant)
+
+**Important**: The following steps, in this Upgrade-Assistant heading, should be
+conducted in the sequence that they are listed below.
 
 ### 5. Delete Commerce Manager
 
@@ -264,74 +266,116 @@ It is not needed by the solution in any way.
 Make a mental note to commit frequently from this point on. Comitting progress on
 code fixes along the way can be a lifesaver.
 
-### Delete leftover assembly dependencies
+### 16. Delete leftover assembly dependencies
 
-Some .NET Framework System assemblies will not have corresponding packages and get orphaned in the Dependencies > Assemblies node.
+Some .NET Framework System assemblies will not have corresponding packages and
+will get orphaned in the Dependencies > Assemblies node.Unless any of these were
+explicitly added by your implementation, you should be free to delete them.
 
-Unless any of these were explicitly added by your implementation, you should be free to delete them.
+### 17. Uninstall obsolete NuGet packages
 
-### Uninstall obsolete NuGet packages
+Some `EPiServer` packages will need to be replaced entirely (i.e., removed and
+replaced with something else). These are listed in the official documentation:
+[Breaking changes in Content Cloud (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12).
 
-Some EPiServer packages will need to be replaced entirely (i.e., removed and replaced with something else):
-<br/>https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12
-
-Uninstall:
+In summary, the following `EPiServer` packages must be uninstalled:
 
 - `EPiServer.CMS.AspNet`
 - `EPiServer.Framework.AspNet`
 - `EPiServer.ServiceLocation.StructureMap`
 - `EPiServer.Logging.Log4Net`
 
-NuGet Package Manager can help. Example:
+NuGet Package Manager reveals, to a sharp eye, which packages must be removed.
+For example:
 
-- The most recent version of `EPiServer.CMS.AspNet` is 11.x, so you know this one must be replaced.
-- But the most recent version of `EPiServer.CMS.UI.AspNetIdentity` is 12+, so you know this can be updated.
+- The latest version of `EPiServer.CMS.AspNet` is `11.x`, so you know this one
+  must be replaced.
+- But the latest version of, say, `EPiServer.CMS.UI.AspNetIdentity` is `12`+, so
+  you know this can be updated.
 
-### Manually resolve package errors
+### 18. Manually resolve package errors
 
-```
-NU1177: Version conflict detected for Xyz. Install/reference Xyz.1.2.3 directly to project MySolution.Web to resolve this issue.
-```
+If you've made it this far, the following error will have probably started
+plaguing your attempts to build the solution:
 
-https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1107
+> NU1177: Version conflict detected for Xyz. Install/reference Xyz.1.2.3 directly
+> to project MySolution.Web to resolve this issue.
 
-Address this by:
+It is unclear to me _why_ this happens, but
 
-1. Open your new CSPROJ file (just double-click the project in Solution
+Here is what Microsoft says about this error: [NuGet Error NU1107](https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1107).
+
+> **Issue**<br/>
+> Unable to resolve dependency constraints between packages. Two different
+> packages are asking for two different versions of 'PackageA'. The project
+> needs to choose which version of 'PackageA' to use.
+>
+> **Solution**<br/>
+> Install/reference 'PackageA' directly (in the project file) with the exact
+> version that you choose. Generally, picking the higher version is the right choice.
+
+In other words, this error can be addressed by doing the following for each
+package that Visual Studio complains about:
+
+1. Open your new CSPROJ file (double-click the project in Solution).
 2. Find where all the `<PackageReference />` elements are.
 3. Manually add the package reference it is complaining about, e.g.,
    <br/>`<PackageReference Include="Xyz" Version="1.2.3" />`
 
-Keep track of which packages you add manually. Once you're finished, if they are redundant then you can remove them.
+This manual process might result in your Project(s) taking on dependencies that
+aren't actually needed. When the upgrade is complete, go through each Project's
+dependencies and clean out the ones that are unused.
 
-### Update NuGet packages
+[ReSharper](https://www.jetbrains.com/resharper/)
+has an Optimize References tool that can help you explore whether and how each
+dependency is used. Right-click on a Project's Packages node (under its
+Dependencies node) to access this tool.
 
-`EPiServer.CMS.AspNet` should be replaced with the following:
+When doing this, becareful not to delete the central `EPiServer` product pacakges
+from your web application Project, such as `EPiServer.CMS`, `EPiServer.Commerce`,
+`EPiServer.Find`, `EPiServer.Forms`, etc.
 
-- `EPiServer.CMS.AspNetCore`
-- `EPiServer.CMS.AspNetCore.Templating`
-- `EPiServer.CMS.AspNetCore.Routing`
-- `EPiServer.CMS.AspNetCore.Mvc`
-- `EPiServer.CMS.AspNetCore.HtmlHelpers`
+### 19. Update NuGet packages
 
-`EPiServer.Framework.AspNet` should be replaced with `EPiServer.Framework.AspNetCore`.
+At this point, the Project should be ready for updating its NuGet packages.
 
-### Address known breaking changes
+As mentioned above, there are a couple `EPiServer` packages that must be _replaced_:
 
-Go through the official breaking changes documentation:
-<br/>https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12
+- `EPiServer.Framework.AspNet` should be replaced with `EPiServer.Framework.AspNetCore`.
+- `EPiServer.CMS.AspNet` should be replaced with the following:
+  - `EPiServer.CMS.AspNetCore`
+  - `EPiServer.CMS.AspNetCore.Templating`
+  - `EPiServer.CMS.AspNetCore.Routing`
+  - `EPiServer.CMS.AspNetCore.Mvc`
+  - `EPiServer.CMS.AspNetCore.HtmlHelpers`
 
-It’s dense but worth it.
+### 20. Address known breaking changes
+
+There are too many `EPiServer` breaking changes to list here. If you haven't
+already, go through the official breaking changes documentation and make sure
+each is taken care of before moving on: [Breaking Changes in Content Cloud (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12).
+It is a dense read, but worth it.
 
 ## Code Fixes
 
-Phase 2: Code issues that are commonly encountered
+The following section is a list of commonly-encountered code fixes. **This is not
+an exhaustive list** (obviously). Much of this content is about replacing
+`System.Web`, which was removed in .NET Core. But there are some Opti-specific
+topics too.
 
-### Replace `HttpContextHelper` with `IHttpContextAccessor`
+### 21. Replace `HttpContextHelper` with `IHttpContextAccessor`
 
-Upgrade-Assistant gives you the `HttpContextHelper` static helper class and replaces all instances of `HttpContext.Current` with it. But we want to use DI, right?
+`HttpContext.Current`, which `EPiServer` solutions tend to use liberally, was
+removed in .NET Core. Because this is such a common issue, Upgrade-Assistant
+automatically creates and adds an `HttpContextHelper` static helper class, which
+provides a static means of accessing the current `HttpContext.
 
-.NET Core introduced `IHttpContextAccessor`, which you can inject.
+Although better than nothing, this does not obey [SOLID](https://en.wikipedia.org/wiki/SOLID).
+In .NET Core, the `IHttpContextAccessor` abstraction was introduced, which can
+be injected by default in ASP.NET Core, and has an `HttpContext` member
+property that provides best-practice access to the current request's context.
+
+For example:
 
 ```cs
 // .NET Framework
@@ -341,7 +385,15 @@ string myCookie = HttpContext.Current.Request.Cookies[CookieNames.PostalCode]?.V
 string myCookie = _httpContextAccessor.HttpContext?.Request.Cookies["MyCookie"];
 ```
 
-### Give yourself time to replace HttpRequest
+### 22. Give yourself time to replace HttpRequest
+
+Microsoft reimagined the `HttpRequest` concept in .NET Core. Most of the legacy
+`System.Web` capability is still present, but in many cases has been reorganized
+to better conform to web and HTTP standards. Because use of the `HttpRequest`
+object is critical to ASP.NET solutions, expect to spend a nontrivial amount of time
+fixing compiler errors due to `HttpRequest` changes.
+
+For example:
 
 ```cs
 // .NET Framework
@@ -361,26 +413,43 @@ string url = httpRequest.GetDisplayUrl(); // or GetEncodedUrl()
 // There is no AnonymousID. Roll your own!
 ```
 
-### We need to talk about HttpClient.
+### 23. Use `IHttpClientFactory`
 
-Managing the lifecycle of `HttpClient` in .NET Framework was always a pain. Even though `HttpClient` implements `IDisposable`, putting it in a `using` statement can lead to SNAT port exhaustion (i.e., when your web server runs out of outgoing connections) and bring your entire application to its knees.
+We need to talk about `HttpClient`.
+
+Managing the lifecycle of `HttpClient` in .NET Framework was always a pain. The
+central point of confusion is that `HttpClient` implements `IDisposable`, but
+that putting it in a `using` statement can lead to SNAT port exhaustion (i.e.,
+when your web server runs out of outgoing connections and stops processing
+incoming requests until they free up) and bring your entire application to its knees.
 
 Much has been written on this:
 
 - [You're using HttpClient wrong and it is destabilizing your software](https://www.aspnetmonsters.com/2016/08/2016-08-27-httpclientwrong/)
 - [You're (probably still) using HttpClient wrong and it is destabilizing your software](https://josef.codes/you-are-probably-still-using-httpclient-wrong-and-it-is-destabilizing-your-software/)
-- ]Singleton HttpClient? Beware of this serious behaviour and how to fix it](http://byterot.blogspot.com/2016/07/singleton-httpclient-dns.html)
-- [Issues with the original HttpClient class available in .NET](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests) Microsoft
+- [Singleton HttpClient? Beware of this serious behaviour and how to fix it](http://byterot.blogspot.com/2016/07/singleton-httpclient-dns.html)
+- [Issues with the original HttpClient class available in .NET](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests)
+  (Microsoft)
 
-In practice, you probably either new up an `HttpClient` on-demand or roll your own `HttpClient` lifecycle management (beware of DNS refreshes).
+In practice, most .NET Framework solutions that use `HttpClient` either new up
+`HttpClient`s on-demand, or _carefully_ roll their own DI-friendly management of
+the `HttpClient` lifecycle (more specifically, the underlying request handler
+object which is the true source of the problem).
 
-### Use `IHttpClientFactory`
+Fortunately, .NET Core introduced `IHttpClientFactory`, which makes these
+problems go away: [Use IHttpClientFactory to implement resilient HTTP requests](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests).
+Once configured, `IHttpClientFactory` can be injected and used to access a safe
+and reliable instance of `HttpClient`. Multiple `HttpClients` can be registered
+per application by giving them names.
 
-Microsoft: [Use IHttpClientFactory to implement resilient HTTP requests](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests)
+This is a two-step process:
 
-TLDR: Register the `HttpClient`(s) as application middleware and then rely on `IHttpClientFactory` to get it for us.
+1. Register the `HttpClient`(s) as application middleware in `Startup.cs`
+2. Inject `IHttpClientFactory` where ever `HttpClient` is needed
 
 Example: Say we depend on a custom API that requires a client certificate...
+
+In .NET Framework, the `HttpClient` might be newed-up on demand, like this:
 
 ```cs
 // .NET Framework
@@ -394,14 +463,15 @@ public static HttpClient GetHttpClientForCustomApi()
 }
 ```
 
-(this code doesn't attempt to manage the request handler's lifecycle, but illustrates the point)
+But in .NET Core, one must first register the `HttpClient` as middleware first,
+and then access it via `IHttpClientFactory`, like this:
 
 ```cs
 // .NET Core
 // Register a named HttpClient as middleware in Startup.cs:
 public static void AddHttpClientForCustomApi(this IServiceCollection services)
 {
-    var certificate = LoadX509Certificate2ForCustomApi();
+    var certificate = LoadX509Certificate2ForCustomApi(); // from file, blob, etc.
     var handler = new HttpClientHandler();
     handler.ClientCertificates.Add(certificate);
     services.AddHttpClient("CustomAPI", httpClient => { })
@@ -412,9 +482,10 @@ public static HttpClient GetHttpClientForCustomApi(IHttpClientFactory factory) =
     factory.CreateClient("CustomAPI");
 ```
 
-### Replace `HostingEnvironment` with `IWebHostEnvironment`
+### 24. Replace `HostingEnvironment` with `IWebHostEnvironment`
 
-Example: Loading a file from the file system...
+`IWebHostEnvironment`, introduced in .NET Core, should be used to replace
+`HostingEnvironment`. One common use case is for accessing the file system:
 
 ```cs
 // .NET Framework
@@ -528,12 +599,15 @@ If you cannot add a new user to the WebAdmin or Administrators group in CMS Admi
 // CMS 11
 public IEnumerable<string> GetVisitorGroupIds()
 {
-        var helper = new VisitorGroupHelper(_visitorGroupRoleRepository);
-        foreach (var visitorGroup in _visitorGroupRepository.List())
+    var helper = new VisitorGroupHelper(_visitorGroupRoleRepository);
+    foreach (var visitorGroup in _visitorGroupRepository.List())
+    {
+        if (visitorGroup != null
+            && helper.IsPrincipalInGroup(PrincipalInfo.CurrentPrincipal, visitorGroup.Name))
         {
-            if (visitorGroup != null && helper.IsPrincipalInGroup(PrincipalInfo.CurrentPrincipal, visitorGroup.Name))
-                yield return visitorGroup.Id.ToString();
+            yield return visitorGroup.Id.ToString();
         }
+    }
 }
 
 // CMS 12
@@ -542,11 +616,18 @@ public IEnumerable<string> GetVisitorGroupIds()
     foreach (var visitorGroup in _visitorGroupRepository.List()?.ToList())
     {
         _visitorGroupRoleRepository.TryGetRole(visitorGroup.Name, out var visitorGroupRole);
-        if (visitorGroupRole != null && visitorGroupRole.IsMatch(PrincipalInfo.CurrentPrincipal, _httpContextAccessor.HttpContext))
+        if (visitorGroupRole != null
+            && visitorGroupRole.IsMatch(PrincipalInfo.CurrentPrincipal, _httpContextAccessor.HttpContext))
+        {
             yield return visitorGroup.Id.ToString();
+        }
     }
 }
 ```
+
+### Replace ImageProcessor with ImageSharp
+
+TBD
 
 ## CMS 12 on DXP
 
