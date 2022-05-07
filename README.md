@@ -17,10 +17,12 @@ there are three "phases" to upgrading from CMS 11 to 12:
 2. Fix code issues
 3. Upgrade service environment
 
-This blog post is will walk through the first two in detail and provide a
+This blog post will walk through the first two in detail and provide a
 starting point for the third. This is not intended to be the definitive guide
 to ugprading an existing solution to .NET 5+, but rather a collection of
 learnings from misadventures in upgrading two Commerce 13 solutions to date.
+
+---
 
 ## Prerequisites
 
