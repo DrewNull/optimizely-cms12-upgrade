@@ -11,7 +11,7 @@ information on how to take an existing CMS 11 / Commerce 13 solution and upgrade
 it to .NET 5+.
 
 As described in the [official documentation](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/upgrading-to-content-cloud-cms-12),
-there phases to upgrading from CMS 11 to 12:
+there are three "phases" to upgrading from CMS 11 to 12:
 
 1. Run Upgrade-Assistant
 2. Fix code issues
