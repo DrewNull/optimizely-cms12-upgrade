@@ -4,63 +4,93 @@
 
 ## Background
 
-There are many great resources for learning how to build a new solution using CMS 12 and Commerce 14. The official [developer documentation](https://world.optimizely.com) has been updated, the official [user guide](https://webhelp.optimizely.com) has been updated, and an excellent [masterclass](https://www.optimizely.com/support/education/product/migrating-to-optimizely-cms-12-and-commerce-14) is hosted by Mark Price and Scott Reed (to name a few). But there aren’t many resources sharing information on how to take an existing CMS 11 / Commerce 13 solution and upgrade it to .NET 5+.
+There are many great resources for learning how to build a new solution using
+CMS 12 and Commerce 14. The official [developer documentation](https://world.optimizely.com)
+has been updated, the official [user guide](https://webhelp.optimizely.com) has
+been updated, and an excellent [masterclass](https://www.optimizely.com/support/education/product/migrating-to-optimizely-cms-12-and-commerce-14)
+is hosted by Mark Price and Scott Reed (to name a few). But there isn't much
+information on how to take an existing CMS 11 / Commerce 13 solution and upgrade
+it to .NET 5+.
+
+This blog post is not intended to be the definitive guide for ugprading an
+existing solution to .NET 5+, but rather a collection of learnings from
+misadventures in upgrading two Commerce 13 solutions to date. One the eve of
+.NET 5 falling out of LTS...
 
 ## Prerequisites
 
+Make sure that your solution is ready to upgrade.
+
 ### 1. Read the official documentation
 
-1.  [Upgrading to Content Cloud (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/upgrading-to-content-cloud-cms-12)
-2.  [Breaking changes in Content Cloud (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12)
-3.  [System requirements for Optimizely (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/system-requirements-for-optimizely)
+1. [Upgrading to Content Cloud (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/upgrading-to-content-cloud-cms-12)
+2. [Breaking changes in Content Cloud (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12)
+3. [System requirements for Optimizely (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/system-requirements-for-optimizely)
 
 ### 2. Be on .NET Framework 4.7.2 or higher
 
-CMS 11 only [requires](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/system-requirements-for-optimizely) .NET Framework 4.6.1, but Microsoft [recommends](https://docs.microsoft.com/en-us/dotnet/core/porting/premigration-needed-changes) being on 4.7.2 or higher when using Upgrade-Assistant
+CMS 11 only [requires](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/system-requirements-for-optimizely)
+.NET Framework 4.6.1, but Microsoft [recommends](https://docs.microsoft.com/en-us/dotnet/core/porting/premigration-needed-changes)
+being on 4.7.2 or higher when using Upgrade-Assistant
 
 ### 3. Update to the latest version of CMS11 (Commerce13) before upgrading
 
-The official documentation doesn't explicitly say to do this, but is there any reason _not_ to?
+The official documentation doesn't explicitly say to do this, but is there any
+reason _not_ to?
 
 ### 4. Check the status of add-on packages
 
-Optimizely maintains a list of the .NET 5 migration status of the official platform and addon NuGet packages:
+Optimizely maintains a list of the .NET 5 migration status of the official
+platform and addon NuGet packages:
 
 - [Add-ons platform compatibility (Optimizely Developer Docs)](https://docs.developers.optimizely.com/integrations/v1.1.0-apps-and-integrations/docs/add-ons-platform-compatibility)
 - [Add-Ons Status (Optimizely.com)](https://world.optimizely.com/resources/net5/add-ons)
 
-No such list exists for unofficial add-ons (as of this writing). So, when planning the upgrade, give yourself time to check the status of your favorite third party add-ons. Having no workaround for unsupported add-ons could derail your whole upgrade project. Know what you’re getting into.
+No such list exists for unofficial add-ons (as of this writing). So, when
+planning the upgrade, give yourself time to check the status of your favorite
+third party add-ons. Having no workaround for unsupported add-ons could derail
+your whole upgrade project. Know what you’re getting into.
 
-Note that some old, .NET Framework add-ons will still work, just with a warning. For example: Authorize.Net. There is no .NET Core+ package, but it still compiles and runs.
+Note that some old, .NET Framework add-ons will still work, just with a warning.
+For example: Authorize.Net. There is no .NET Core+ package, but it still compiles
+and runs when you install it to your .NET 5+ solution via NuGet.
 
 ## Upgrade-Assistant
 
-Phase 1: How to use Microsoft's CLI tool for upgrading to .NET 5+
+Once you have reviewed the prerequisites and your solution is ready, it's time
+to start making changes. The [.NET Upgrade-Assistant](https://dotnet.microsoft.com/en-us/platform/upgrade-assistant)
+is Microsoft's CLI tool for upgrading .NET Framework solutions to .NET 5+.
 
-### Delete Commerce Manager
+Read and bookmark the official Optimizely documentation: [Upgrade Assistant](https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/upgrade-assistant)
 
-- As of Commerce 14, Commerce Manager is no more.
-- 👏
-- Remove the Commerce Manager project before getting started with Upgrade-Assistant.
-- Note that some of Commerce Manager’s functionality hasn’t been ported over to the CMS yet and can only be done with APIs:
-  - Importing and exporting catalogs
-  - Adding countries and regions
-  - Adding currencies
-  - Working with business objects
-  - Working with catalog and order meta classes and fields
+### 5. Delete Commerce Manager
 
-### Delete `node_modules`
+As of Commerce 14, Commerce Manager is no more. 👏
 
-As a first step, Upgrade-Assistant copies all files in your solution/project folder into a Backup directory.
+Remove the Commerce Manager project before getting started with Upgrade-Assistant.
+Take note that some of Commerce Manager’s functionality hasn’t been ported over
+to the CMS yet and can only be done with APIs:
 
-This can be disabled, but to play it safe:
-If you have `node_modules` in the project folder you are upgrading, then delete it before running UA.
+- Importing and exporting catalogs
+- Adding countries and regions
+- Adding currencies
+- Working with business objects
+- Working with catalog and order meta classes and fields
 
-(don’t forget to stop any local watch)
+### 6. Delete `node_modules`
 
-### Use Opti’s Upgrade-Assistant-Extensions
+As a first step, Upgrade-Assistant copies all files in your solution/project
+folder into a Backup directory. If you have NPM's `node_modules` directory in
+the solution you are upgrading, you _probably_ want to delete it first so you
+don't have to sit around waiting for it to be backed up. Upgrade-Assistant's
+backup step can be disabled, but to play it safe, delete your `node_modules`
+folder before moving forward.
 
-Optimizely provides Upgrade-Assistant extensions with some Opti-specific capabilities:
+### 7. Use Opti’s Upgrade-Assistant-Extensions
+
+Upgrade-Assistant can be extended to automatically execute additional commands.
+Optimizely has a public GitHub repo for their own Upgrade-Assistant extensions
+which provides some Opti-specific capabilities:
 
 - String Replacement
 - Remove Default Argument for the TemplateDescriptor Attribute
@@ -70,46 +100,53 @@ Optimizely provides Upgrade-Assistant extensions with some Opti-specific capabil
 - Remove obsolete using statements like Mediachase.BusinessFoundation
 - Type Mapping like EPiServer.Web.Routing to EPiServer.Core.Routing
 
-Additionally, NuGet packages can be specified and templates for Program.cs and Startup.cs as they are required by .NET 5.0 can be added as well.
+Additionally, NuGet packages can be specified, and templates for `Program.cs` and
+`Startup.cs` (required by .NET 5+) can be added as well.
 
-Read how it works (there are a couple gotchas):<br/>
-https://github.com/episerver/upgrade-assistant-extensions
+Read how it works on GitHub (there are a couple gotchas): [Upgrade Assistant Extensions](https://github.com/episerver/upgrade-assistant-extensions).
+Check the [Releases](https://github.com/episerver/upgrade-assistant-extensions/releases)
+page to learn what the configuration options are and how to use them.
 
-Learn how to configure UAE:<br/>
-https://github.com/episerver/upgrade-assistant-extensions/releases
-
-Ugrade-Assistant-Extensions will do some nice things for you out of the box (i.e., replace `BlockController` with `BlockComponent`\*), but do consider spending some time customizing the config for string/type/class replacements.
-
-\*It does not, e.g., change `PageController` `Index` methods into `IndexAsync` methods, though.
+Note that, although Ugrade-Assistant-Extensions will do some nice things for you
+out of the box (e.g., replace `BlockController`s with `BlockComponent`s), do
+expect to spend time customizing the config for string/type/class replacements.
 
 How to get it ready:
 
-1. Download the latest release (Epi.Source.Updater.X.Y.Z.zip):
-   https://github.com/episerver/upgrade-assistant-extensions/releases
-2. Unzip it to your local file system. E.g.,
-   ` C:\Temp\Epi.Source.Updater\`
-3. Make your preferred configuration changes
+1. Download the latest release (Epi.Source.Updater.X.Y.Z.zip): [Releases](https://github.com/episerver/upgrade-assistant-extensions/releases)
+2. Unzip it to your local file system, such as `C:\Temp\Epi.Source.Updater\`.
+3. Make your preferred configuration changes.
 
-### Make a plan-of-attack before running Upgrade-Assistant
+### 8. Make a plan-of-attack before running Upgrade-Assistant
 
 Upgrade-Assistant can run against a Solution file (`.sln`) or Project file (`.csproj`).
+If you run it against the Solution, it is smart enough to analyze your project
+dependency tree and execute against one project at a time, in order, starting with
+those that has no project dependencies.
 
-If you run it against the Solution, it will execute against the child Projects in sequence according to the project dependency tree.
-
-Example (RE: onion architecture):
-
-1. `MySolution.Domain.csproj`
-2. `MySolution.Application.csproj`
-3. `MySolution.Web.csproj`
-4. (done)
-
-### Consider doing one CSPROJ at a time
-
-Upgrade-Assistant will track progress and start where it left off if you cancel it at any time. But...
-
-Do figure out the dependency sequence first and then run UA manually against each Project. This will allow you to resolve code issues in isolation on a per-Project basis without getting confused about where you are with UA.
+For example, consider a fictitious onion architecture inspired `MySolution.sln`.
+If you run Upgrade-Assistant against the `.sln`, it will execute against each
+project in this order:
 
 1. `MySolution.Domain.csproj`
+   - Depends on nothing
+2. `MySolution.Application.csproj`
+   - Depends on Domain
+3. `MySolution.Web.csproj`
+   - Depends on Application, which depends on Domain
+
+### 9. Consider doing one CSPROJ at a time
+
+Upgrade-Assistant will track progress and start where it left off if you cancel
+it at any time. But&mdash;do figure out the dependency sequence first and
+consider running UA manually against each Project. This will allow you to
+resolve code issues in isolation on a per-Project basis without getting confused
+about where you are with UA. Especially if you find yourself mindlessly jamming
+that Enter key while it runs.
+
+For example,
+
+1. `MySolution.Domain.csproj`
    1. Run Upgrade-Assistant
    2. Fix code issues
    3. Commit to source control
@@ -122,48 +159,59 @@ Do figure out the dependency sequence first and then run UA manually against eac
    2. Fix code issues
    3. Commit to source control
 
-### Think about what flags to use
+### 10. Think about which flags to use
 
-Basic syntax if your terminal is at the solution root:
+Upgrade-Assistant has a number of flags that can modify execution behavior.
 
-```
+The UA basic syntax, if your terminal is at the solution root, is the following:
+
+```cli
 upgrade-assistant upgrade MySolution.Web/MySolution.Web.csproj --flags-go-here
 ```
 
-Flags:
+Consider using the following flags:
 
 `--extension "c:\temp\epi.source.updater"`<br/>`--target-tfm-support LTS`
-<br/>Enables Opti’s Upgrade-Assistant-Extensions
+<br/>These two flags enable Opti’s Upgrade-Assistant-Extensions.
 
 `--ignore-unsupported-features`
 <br/>This is required for upgrading the web application CSPROJ.
 
 `--skip-backup`
-<br/>Without this, UA will copy all solution files into /Backup/ first (RE: delete node_modules). But don’t you have source control?
+<br/>Without this, UA will copy all solution files into `/Backup/` first (RE:
+deleing `node_modules`). But... don’t you have source control?
 
 `--non-interactive`
-<br/>Officially: Microsoft’s documentation says that Upgrade-Assistant is meant to be interactive and to think twice about using this flag.
-<br/>Unofficially: If you don’t use this flag, you will be sitting at your keyboard, pressing Enter repeatedly, for hours.
+<br/>Officially: Microsoft’s documentation says that Upgrade-Assistant is meant
+to be interactive, and that you should think twice about using this flag.
+<br/>Unofficially: If you don’t use this flag, you will be sitting at your
+keyboard, pressing Enter repeatedly, for hours.
 
-### Install and update Upgrade-Assistant
+### 11. Install and update Upgrade-Assistant
 
-Open a terminal from anywhere:
+To install Upgrade-Assistant globally on your local machine, open a terminal
+from anywhere and enter the following:
 
-```
+```cli
 dotnet tool install -g upgrade-assistant
 dotnet tool update -g upgrade-assistant
 ```
 
-https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/upgrade-assistant
+### 12. Run Upgrade-Assistant
 
-### Run Upgrade-Assistant
+If you've made it this far, you're finally ready to run Upgrade-Assistant.
 
 From a terminal in your solution root (recommended):
 
-`set DefaultTargetFrameworks__LTS=net5.0`
-<br/>(this is required by Upgrade-Assistant-Extensions)
-
+```cli
+set DefaultTargetFrameworks__LTS=net5.0
 ```
+
+This ☝ is required by Upgrade-Assistant-Extensions.
+
+Then, with the framework set, enter:
+
+```cli
 upgrade-assistant upgrade MySolution.Web/MySolution.Web.csproj
     --ignore-unsupported-features
     --skip-backup
@@ -172,34 +220,49 @@ upgrade-assistant upgrade MySolution.Web/MySolution.Web.csproj
     --target-tfm-support LTS
 ```
 
-### Wait
+This ☝ is written on multiple lines for readability, not for copy-paste.
 
-(this can take several minutes up to hours)
+At this point, Upgrade-Assistant starts doing its thing.
 
-### Review the code changes
+### 13. Wait
+
+Upgrade-Assistant can take from several minutes to, depending on the size of
+your solution, hours.
+
+### 14. Review the code changes
+
+Here are some of the changes you should expect to see when upgrading your web
+application solution project.
 
 `+ Properties/launchSettings.json`
 <br/>Local server/IIS Express settings. Note that .NET5+ runs on HTTPS by default!
 
 `+ appsettings.Development.json`
 <br/>`+ appsettings.json`
-<br/>Where your Web.config appSettings and connectionStrings went. TBD on guidance from the DXP team…
+<br/>Where your Web.config appSettings and connectionStrings went. TBD on
+guidance from the DXP team...
 
 `- packages.config`
 <br/>Packages are now referenced in the CSPROJ files.
 
 `+ Program.cs`
 <br/>`+ Startup.old.cs`
-<br/>Program.cs and Startup.cs will need to be ported over. Look at Foundation for inspiration:
-<br/>https://github.com/episerver/Foundation/tree/main/src/Foundation
+<br/>Program.cs and Startup.cs will need to be ported over. Look at Foundation
+for inspiration: [GitHub](https://github.com/episerver/Foundation/tree/main/src/Foundation).
 
-### Commit the broken code
+### 15. Commit the broken code
 
-Do this so that if the code fixes go sideways, you can easily go back to the state immediately after running the Upgrade-Assistant
+Be sure to commit the code at this stage, even though it is broken. This way, if
+your code fixes go sideways, you can easily go back to the state immediately
+after running the Upgrade-Assistant.
 
-Consider checking in `.upgrade-assistant`. This is where UA tracks what steps it has already done.
+Do check in `.upgrade-assistant`. This is where UA internally tracks its own
+progress, allowing it to pick up where it left off if you need to shut down along
+the way. Jot down a reminder to delete this file once the upgrade is complete.
+It is not needed by the solution in any way.
 
-Commit frequently from this point on.
+Make a mental note to commit frequently from this point on. Comitting progress on
+code fixes along the way can be a lifesaver.
 
 ### Delete leftover assembly dependencies
 
