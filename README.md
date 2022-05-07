@@ -526,8 +526,10 @@ The `[ResponseCache]` attribute should feel familiar.
 `RouteTable` is from `System.Web` and no longer exists. Optimizely controllers
 are automatically routed by the CMS, and custom API controllers _should_ use attribute
 routing. But there are some scenarios where custom routes will need to be manually
-registered. ASP.NET Core introduces `app.UseEndpoints` to register custom routes
+registered. ASP.NET Core introduces `app.UseEndpoints()` to register custom routes
 as middleware.
+
+Example:
 
 ```cs
 // .NET Framework
@@ -544,18 +546,21 @@ app.UseEndpoints(endpoints =>
 });
 ```
 
-### Refactor async controller methods
+### 27. Use async controller methods
 
-`PageControllers` and `ContentControllers` can now be "async all the way". `BlockComponents` (f.k.a. `BlockControllers`), not so much.
+Although there probably aren't many use cases for it, `PageControllers` and
+`ContentControllers` (Commerce) can now be "async all the way". Note that
+partial content controllers, such `BlockComponents` (f.k.a. `BlockControllers`),
+must still be synchronous.
 
 ```cs
 // .NET Framework
-public ActionResult Index(HomePage currentPage)
-public ActionResult Index(StandardProduct currentContent)
+public ActionResult Index(HomePage currentPage) {}
+public ActionResult Index(StandardProduct currentContent) {}
 
 // .NET Core
-public async Task<ActionResult> IndexAsync(HomePage currentPage)
-public async Task<ActionResult> IndexAsync(StandardProduct currentContent)
+public async Task<ActionResult> IndexAsync(HomePage currentPage) {}
+public async Task<ActionResult> IndexAsync(StandardProduct currentContent) {}
 ```
 
 ### Delete `SessionStateBehavior.Disabled`
