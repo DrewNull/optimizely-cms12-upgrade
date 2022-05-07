@@ -521,9 +521,13 @@ The `[ResponseCache]` attribute should feel familiar.
   `<distributed-cache>` that uses Opti's `ISynchronizedObjectInstanceCache`
   under the hood.
 
-### Replace `RouteTable` with `UseEndpoints`
+### 26. Replace `RouteTable` with `UseEndpoints`
 
-`RouteTable` is from `System.Web` and no longer exists. Use attribute routing if you can. But if you can't...
+`RouteTable` is from `System.Web` and no longer exists. Optimizely controllers
+are automatically routed by the CMS, and custom API controllers _should_ use attribute
+routing. But there are some scenarios where custom routes will need to be manually
+registered. ASP.NET Core introduces `app.UseEndpoints` to register custom routes
+as middleware.
 
 ```cs
 // .NET Framework
