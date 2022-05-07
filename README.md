@@ -54,7 +54,7 @@ Note that some old, .NET Framework add-ons will still work, just with a warning.
 For example: Authorize.Net. There is no .NET Core+ package, but it still compiles
 and runs when you install it to your .NET 5+ solution via NuGet.
 
-## Upgrade-Assistant
+## Phase 1: Upgrade-Assistant
 
 Once you have reviewed the prerequisites and your solution is ready, it's time
 to start making changes. The [.NET Upgrade-Assistant](https://dotnet.microsoft.com/en-us/platform/upgrade-assistant)
@@ -356,7 +356,7 @@ already, go through the official breaking changes documentation and make sure
 each is taken care of before moving on: [Breaking Changes in Content Cloud (CMS 12)](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12).
 It is a dense read, but worth it.
 
-## Code Fixes
+## Phase 2: Code Fixes
 
 The following section is a list of commonly-encountered code fixes. **This is not
 an exhaustive list** (obviously). Much of this content is about replacing
@@ -584,43 +584,86 @@ In .NET Core, however, this asynchronous behavior is the default. So, the
 `SessionState` attribute is no longer needed&mdash;in fact, it no longer exists&mdash;
 and must be removed.
 
-### Take care when replacing `Newtonsoft.Json` with `System.Text.Json`
+### 29. Take care when replacing `Newtonsoft.Json` with `System.Text.Json`
 
-.NET Core introduced a performant JSON toolkit with `System.Text.Json`. It isn’t as feature rich as Newtonsoft, but it is the default (and preferred) JSON de/serializer in ASP.NET Core.
+.NET Core introduced a performant JSON toolkit with `System.Text.Json`. It isn't
+as feature rich as Newtonsoft, but it is the default (and preferred) JSON
+de/serializer in ASP.NET Core. That said, take care not to blindly migrate
+serializable types over to STJ. Optimizely Search & Navigation still uses
+Newtonsoft under the hood, STJ ships with a new set of attributes, and the default
+serialization settings might not be the same.
 
-Do test any serialization that is migrated from Newtonsoft to STJ.
-
-Examples:
+Some areas to test when migrating to STJ:
 
 - API controller requests and response models
 - Anything that is indexed or projected with Opti Search & Nav
 - External API client requests and responses
 
-### Don’t get confused by authorization action filters
+### 30. Don't get confused by authorization action filters
 
-Use case: Triggering custom behavior when an authentication check either succeeds or fails.
+Authorization filters did not receive a major reworking between .NET Framework
+and .NET Core, but they are useful for triggering custom behavior when an
+authentication check either succeeds or fails, and best practice code examples
+can be difficult to find when searching the web due to the many versions and variations.
 
 Do implement both `ActionFilterAttribute` and `IAuthorizationFilter`:
 
 ```cs
-public class AuthenticationRequiredAttribute : ActionFilterAttribute, IAuthorizationFilter
+public class AuthenticationRequiredAttribute
+    : ActionFilterAttribute, IAuthorizationFilter {}
 ```
 
-But the `OnAuthorization` signature changed slightly:
+Note that the `OnAuthorization` signature changed slightly:
 
 ```cs
 // .NET Framework
-public void OnAuthorization(AuthorizationContext filterContext)
+public void OnAuthorization(AuthorizationContext filterContext) {}
 
 // .NET Core
-public void OnAuthorization(AuthorizationFilterContext filterContext)
+public void OnAuthorization(AuthorizationFilterContext filterContext) {}
 ```
 
-### Check virtual roles in appsettings.json
+### 31. Check virtual roles in appsettings.json
 
-If you cannot add a new user to the WebAdmin or Administrators group in CMS Admin, check your `appsettings.json` for virtual role definitions.
+If administrators are unable to assign users to the WebAdmins or Administrators
+user groups in CMS Admin, try explitly setting the mapped roles in
+`appsettings.json`.
 
-### Remove VisitorGroupHelper
+Example (note that this is _not_ exhaustive):
+
+```json
+{
+  "EPiServer": {
+    "Cms": {
+      "MappedRoles": {
+        "Items": {
+          "CmsAdmins": {
+            "MappedRoles": ["WebAdmins", "Administrators"],
+            "ShouldMatchAll": "false"
+          },
+          "CmsEditors": {
+            "MappedRoles": ["WebEditors"],
+            "ShouldMatchAll": "false"
+          },
+          "CommerceAdmins": {
+            "MappedRoles": ["WebAdmins", "Administrators"],
+            "ShouldMatchAll": "false"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### 32. Remove VisitorGroupHelper
+
+This is not defined in the official list of [breaking changes](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/breaking-changes-in-content-cloud-cms-12),
+but `VisitorGroupHelper` was removed in CMS 12. One of its use cases was
+checking to see whether a user meets the criteria of a Visitor Group. This can
+now be done with only a dependency on `IVisitorGroupRepository`.
+
+Example:
 
 ```cs
 // CMS 11
@@ -652,18 +695,72 @@ public IEnumerable<string> GetVisitorGroupIds()
 }
 ```
 
-### Replace ImageProcessor with ImageSharp
+### 33. Replace ImageProcessor with ImageSharp
 
-TBD
+`ImageProcessor` was, for many `EPiServer` solutions, _the_ go-to NuGet package
+for conducting dynamic image manipulation at runtime. It even had a cache-to-Azure-blob-storage
+add-on developed by the Optimizely community.
 
-## CMS 12 on DXP
+`ImageProcessor` was, however, developed only for the .NET Framework. And abandoned
+in .NET Core. Its successor is `ImageSharp`, also developed by Six Labors, which
+has inherited this role and is even an official dependency of `EPiServer.CMS.Core`
+12+.
 
-Phase 3: Upgrading the service environment
+`SixLabors.ImageSharp.Web` is the NuGet package that adds runtime dynamic image
+manipulation, such as resizing, for the web, and is necessary for using `ImageSharp`
+to conduct image optimization. It depends on `SixLabors.ImageSharp`, which is,
+conveniently, a dependency of `EPiServer.CMS.Core`.
 
-### To be continued...
+Side note: Vincent Baaij created an add-on that adds Azure blob caching support
+for `ImageSharp.Web`: [GitHub](https://github.com/vnbaaij/Baaijte.Optimizely.ImageSharp.Web).
 
-> Once the codebase is upgraded to .NET 5, and everything works locally, DXP customers will need to migrate their service environment to the latest version using migration tool that will soon be available in [the portal](https://paasportal.episerver.net) (paasportal.episerver.net).
+In `EPiServer.CMS.Core` 12.4.2, Opti upgraded its dependency on `ImageSharp` from
+version 1 to version 2. But `ImageSharp.Web` version 1 is incompatible with
+`ImageSharp` 2. `ImageSharp.Web` 2, however, is only compatible with .NET 6,
+_not_ .NET 5. Which means that Optimizely inadvertently broke the implicit
+dependency on `ImageSharp.Web` when it upgraded `EPiServer.CMS.Core` from version
+12.4.1 to 12.4.2. This is a significant problem because there aren't many alternatives
+to `ImageSharp` in the .NET 5 ecosystem, and none that are already a dependency for
+`EPiServer`.
 
-https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/upgrading-to-content-cloud-cms-12
+As of this writing&mdash;May, 2022&mdash;it is unclear which `EPiServer` packages
+[officially support .NET 6](https://world.optimizely.com/blogs/Magnus-Rahl/Dates/2022/2/rolling-out-support-for--net-6/).
+Because of this, there are presently two options for developers to choose from:
 
-## The End
+1. Target .NET 5, upgrade `EPiServer.CMS.Core` no further than 12.4.1, and use
+   `ImageSharp.Web` version 1.
+2. Target .NET 6, upgrade `EPiServer.CMS.Core` to 12.4.2 or later, and use
+   `ImageSharp.Web` version 2.
+
+Option #1 is the stable, officially supported option. Option #2 is a dice roll
+but doesn't get you stuck on CMS 12.4.
+
+More information can be found at the following forum post:
+[EPiServer.CMS.Core 12.4.2 breaks ImageSharp](https://world.optimizely.com/forum/developer-forum/Problems-and-bugs/Thread-Container/2022/4/episerver-cms-core-12-4-2-breaks-imagesharp/).
+
+### 34. To be continued
+
+As mentioned above, this list of code fixes is a brief subset of the issues that
+developers are likely to encounter when upgrading CMS 11 to 12. Do leverage the
+official Optimizely developer community as new problems arise. Ask questions and
+share your answers. Be a good Optimizely citizen!
+
+## Phase 3: CMS 12 on DXP
+
+Official DXP support for solutions that were upgraded from CMS 11 to 12 has not
+yet been announced. Optimizely hosts CMS 12+ sites in Linux, so developers can
+expect their DXP upgrade(s) to involve standing up an entirely new environment,
+rather than deploying new packages to existing environments, like typical version
+upgrades.
+
+The [official documentation](https://docs.developers.optimizely.com/content-cloud/v11.0.0-content-cloud/docs/upgrading-to-content-cloud-cms-12)
+has this to say:
+
+> Once the codebase is upgraded to .NET 5, and everything works locally, DXP
+> customers will need to migrate their service environment to the latest version
+> using migration tool that will soon be available in [the portal](https://paasportal.episerver.net)
+> (paasportal.episerver.net).
+
+To my knowledge, no CMS 11-to-12 solutions have been deployed to DXP yet. If you
+know of any, or are preparing one yourself, please share your experience(s) in
+the comments below. Thank you!
