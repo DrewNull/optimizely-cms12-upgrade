@@ -563,20 +563,26 @@ public async Task<ActionResult> IndexAsync(HomePage currentPage) {}
 public async Task<ActionResult> IndexAsync(StandardProduct currentContent) {}
 ```
 
-### Delete `SessionStateBehavior.Disabled`
+### 28. Delete `SessionStateBehavior.Disabled`
 
-In .NET Framework, MVC controllers would&mdash;by default&mdash;handle multiple incoming requests within a single session synchronously.
+In the .NET Framework, MVC controllers would&mdash;by default&mdash;handle
+multiple incoming requests within a single session synchronously. That is, if a
+user’s browser where to issue, say, 3 requests at the same time, ASP.NET would
+execute them one at a time in a FIFO sequence. At scale, this would lead to
+performance issues because the browser would be held in limbo as ASP.NET took its
+time processing one request at a time.
 
-That is, if a user’s browser issues 3 requests at the same time, ASP.NET would execute them one at a time.
-
-We could get around this by using the `SessionState` attribute on our controllers:
+This could be mitigated using the `SessionState` attribute on controllers, which
+explicitly tells ASP.NET to process requests asynchronously:
 
 ```cs
 [SessionState(SessionStateBehavior.Disabled)]
 public class MyController : Controller
 ```
 
-In .NET Core, this asynchronous behavior is the default. So, the `SessionState` attribute is no longer needed.
+In .NET Core, however, this asynchronous behavior is the default. So, the
+`SessionState` attribute is no longer needed&mdash;in fact, it no longer exists&mdash;
+and must be removed.
 
 ### Take care when replacing `Newtonsoft.Json` with `System.Text.Json`
 
