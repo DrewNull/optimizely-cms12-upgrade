@@ -40,7 +40,7 @@ CMS 11 only [requires](https://docs.developers.optimizely.com/content-cloud/v11.
 .NET Framework 4.6.1, but Microsoft [recommends](https://docs.microsoft.com/en-us/dotnet/core/porting/premigration-needed-changes)
 being on 4.7.2 or higher when using Upgrade-Assistant
 
-### 3. Update to the latest version of CMS11 (Commerce13) before upgrading
+### 3. Update to the latest version of CMS 11 (Commerce 13) before upgrading
 
 The official documentation doesn't explicitly say to do this, but is there any
 reason _not_ to?
@@ -58,19 +58,19 @@ planning the upgrade, give yourself time to check the status of your favorite
 third party add-ons. Having no workaround for unsupported add-ons could derail
 your whole upgrade project. Know what you’re getting into.
 
-Note that some old, .NET Framework add-ons will still work, just with a warning.
-For example: Authorize.Net. There is no .NET Core+ package, but it still compiles
-and runs when you install it to your .NET 5+ solution via NuGet.
+Note that some old .NET Framework add-ons will still work, just with a warning.
+For example, there is no .NET Core package for Authorize.Net, but your .NET 5
+solution will still compile and run with it installed.
 
 ## Phase 1: Upgrade-Assistant
 
 Once you have reviewed the prerequisites and your solution is ready, it's time
-to start making changes. The [.NET Upgrade-Assistant](https://dotnet.microsoft.com/en-us/platform/upgrade-assistant)
+to start making changes. The [.NET Upgrade Assistant](https://dotnet.microsoft.com/en-us/platform/upgrade-assistant)
 is Microsoft's CLI tool for upgrading .NET Framework solutions to .NET 5+.
 
 Read and bookmark the official Optimizely documentation: [Upgrade Assistant](https://docs.developers.optimizely.com/content-cloud/v12.0.0-content-cloud/docs/upgrade-assistant)
 
-**Important**: The following steps, in this Upgrade-Assistant heading, should be
+**Important**: The following steps, under this Upgrade-Assistant heading, should be
 conducted in the sequence that they are listed below.
 
 ### 5. Delete Commerce Manager
@@ -92,7 +92,7 @@ to the CMS yet and can only be done with APIs:
 As a first step, Upgrade-Assistant copies all files in your solution/project
 folder into a Backup directory. If you have NPM's `node_modules` directory in
 the solution you are upgrading, you _probably_ want to delete it first so you
-don't have to sit around waiting for it to be backed up. Upgrade-Assistant's
+don't have to sit around waiting for it to get backed up. Upgrade-Assistant's
 backup step can be disabled, but to play it safe, delete your `node_modules`
 folder before moving forward.
 
@@ -100,7 +100,7 @@ folder before moving forward.
 
 Upgrade-Assistant can be extended to automatically execute additional commands.
 Optimizely has a public GitHub repo for their own Upgrade-Assistant extensions
-which provides some Opti-specific capabilities:
+which provide some Opti-specific capabilities:
 
 - String Replacement
 - Remove Default Argument for the TemplateDescriptor Attribute
@@ -118,7 +118,7 @@ Check the [Releases](https://github.com/episerver/upgrade-assistant-extensions/r
 page to learn what the configuration options are and how to use them.
 
 Note that, although Ugrade-Assistant-Extensions will do some nice things for you
-out of the box (e.g., replace `BlockController`s with `BlockComponent`s), do
+out of the box (e.g., replace `BlockController`s with `BlockComponent`s), _do_
 expect to spend time customizing the config for string/type/class replacements.
 
 How to get it ready:
@@ -132,7 +132,7 @@ How to get it ready:
 Upgrade-Assistant can run against a Solution file (`.sln`) or Project file (`.csproj`).
 If you run it against the Solution, it is smart enough to analyze your project
 dependency tree and execute against one project at a time, in order, starting with
-those that has no project dependencies.
+those that have no project dependencies themselves.
 
 For example, consider a fictitious onion architecture inspired `MySolution.sln`.
 If you run Upgrade-Assistant against the `.sln`, it will execute against each
@@ -189,7 +189,7 @@ Consider using the following flags:
 
 `--skip-backup`
 <br/>Without this, UA will copy all solution files into `/Backup/` first (RE:
-deleing `node_modules`). But... don’t you have source control?
+deleting `node_modules`). But... don’t you have source control?
 
 `--non-interactive`
 <br/>Officially: Microsoft’s documentation says that Upgrade-Assistant is meant
@@ -277,7 +277,7 @@ code fixes along the way can be a lifesaver.
 ### 16. Delete leftover assembly dependencies
 
 Some .NET Framework System assemblies will not have corresponding packages and
-will get orphaned in the Dependencies > Assemblies node.Unless any of these were
+will get orphaned in the Dependencies > Assemblies node. Unless any of these were
 explicitly added by your implementation, you should be free to delete them.
 
 ### 17. Uninstall obsolete NuGet packages
@@ -309,8 +309,6 @@ plaguing your attempts to build the solution:
 > NU1177: Version conflict detected for Xyz. Install/reference Xyz.1.2.3 directly
 > to project MySolution.Web to resolve this issue.
 
-It is unclear to me _why_ this happens, but
-
 Here is what Microsoft says about this error: [NuGet Error NU1107](https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1107).
 
 > **Issue**<br/>
@@ -339,7 +337,7 @@ has an Optimize References tool that can help you explore whether and how each
 dependency is used. Right-click on a Project's Packages node (under its
 Dependencies node) to access this tool.
 
-When doing this, becareful not to delete the central `EPiServer` product pacakges
+When doing this, be careful not to delete the central `EPiServer` product pacakges
 from your web application Project, such as `EPiServer.CMS`, `EPiServer.Commerce`,
 `EPiServer.Find`, `EPiServer.Forms`, etc.
 
@@ -427,9 +425,9 @@ We need to talk about `HttpClient`.
 
 Managing the lifecycle of `HttpClient` in .NET Framework was always a pain. The
 central point of confusion is that `HttpClient` implements `IDisposable`, but
-that putting it in a `using` statement can lead to SNAT port exhaustion (i.e.,
-when your web server runs out of outgoing connections and stops processing
-incoming requests until they free up) and bring your entire application to its knees.
+putting it in a `using` statement can lead to SNAT port exhaustion (i.e., when
+your web server runs out of outgoing connections and stops processing incoming
+requests until connections free up) and bring your entire application to its knees.
 
 Much has been written on this:
 
@@ -441,13 +439,13 @@ Much has been written on this:
 
 In practice, most .NET Framework solutions that use `HttpClient` either new up
 `HttpClient`s on-demand, or _carefully_ roll their own DI-friendly management of
-the `HttpClient` lifecycle (more specifically, the underlying request handler
-object which is the true source of the problem).
+the `HttpClient` lifecycle (or, more specifically, the underlying request handler
+which is the true source of the problem).
 
 Fortunately, .NET Core introduced `IHttpClientFactory`, which makes these
 problems go away: [Use IHttpClientFactory to implement resilient HTTP requests](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests).
 Once configured, `IHttpClientFactory` can be injected and used to access a safe
-and reliable instance of `HttpClient`. Multiple `HttpClients` can be registered
+and reliable instance of `HttpClient`. Multiple `HttpClient`s can be registered
 per application by giving them names.
 
 This is a two-step process:
@@ -514,16 +512,16 @@ server-side Response Caching Middleware new in ASP.NET Core:
 [Response Caching Middleware in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/middleware).
 The `[ResponseCache]` attribute should feel familiar.
 
-- Note that this is different than .NET Core's plain-vanilla "Response Caching" concept
+- Note that this is different than .NET Core's plain-vanilla "Response Caching" concept.
 - RCM does not account for whether the user is authenticated, unlike .NET
   Framework output caching. This is a significant departure from how output
   caching worked before. Do consider this when rendering content that could vary
   by user.
 - Be careful about the sequence in which you call `app.UseResponseCaching()`. It
   cannot be invoked before `app.UseCors()`.
-- ASP.NET Core introudces a new caching tool called [Cache Tag Helpers](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/tag-helpers/built-in/distributed-cache-tag-helper).
+- ASP.NET Core introduces a new caching tool called [Cache Tag Helpers](https://docs.microsoft.com/en-us/aspnet/core/mvc/views/tag-helpers/built-in/distributed-cache-tag-helper).
   This is represented as two new Razor elements, `<cache>` and `<distributed-cache>`,
-  which facilitates the caching of server-rendered markup from within Razor, and
+  which facilitate the caching of server-rendered markup from within Razor, and
   can be used to achieve donut caching. Although Optimizely does not have
   official helpers to manage `vary-by`, it's easy to imagine an extension for
   `<distributed-cache>` that uses Opti's `ISynchronizedObjectInstanceCache`
@@ -556,9 +554,9 @@ app.UseEndpoints(endpoints =>
 
 ### 27. Use async controller methods
 
-Although there probably aren't many use cases for it, `PageControllers` and
-`ContentControllers` (Commerce) can now be "async all the way". Note that
-partial content controllers, such `BlockComponents` (f.k.a. `BlockControllers`),
+Although there probably aren't many use cases for it, `PageController`s and
+`ContentController`s (Commerce) can now be _async all the way_. Note that
+partial content controllers, such `BlockComponent`s (f.k.a. `BlockController`s),
 must still be synchronous.
 
 ```cs
